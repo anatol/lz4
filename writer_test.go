@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
@@ -276,6 +277,23 @@ func TestWriterLegacy(t *testing.T) {
 				t.Fatal(err)
 			}
 			if err := zw.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			// write to filesystem for further checking
+			tmp, err := os.CreateTemp("", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tmp.Name())
+			if _, err := tmp.Write(out.Bytes()); err != nil {
+				t.Fatal(err)
+			}
+
+			cmd := exec.Command("lz4", "--test", tmp.Name())
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
 				t.Fatal(err)
 			}
 
